@@ -1,34 +1,36 @@
 #include <emscripten.h>
 #include <vector>
-#include <unordered_map>
 
-struct Vertex {
-    float x, y, z;
-};
-
-// Simple greedy meshing for flat surfaces (Stage 2)
 extern "C" {
 
 EMSCRIPTEN_KEEPALIVE
 int getVertexCount() {
-    return 6 * 800; // Increased for better world
+    return 6 * 1600; // 4 chunks worth of quads
 }
 
 EMSCRIPTEN_KEEPALIVE
 void generateWorld(float* buffer) {
     int index = 0;
-    for (int x = -30; x < 30; x++) {
-        for (int z = -30; z < 30; z++) {
-            float height = 0.0f + (sin(x * 0.2f) + cos(z * 0.2f)) * 1.5f;
 
-            // Greedy quad for ground
-            buffer[index++] = x;     buffer[index++] = height; buffer[index++] = z;
-            buffer[index++] = x+1;   buffer[index++] = height; buffer[index++] = z;
-            buffer[index++] = x;     buffer[index++] = height; buffer[index++] = z+1;
+    // Simple 4-chunk system (2x2 chunks)
+    for (int chunkX = 0; chunkX < 2; chunkX++) {
+        for (int chunkZ = 0; chunkZ < 2; chunkZ++) {
+            for (int x = 0; x < 16; x++) {
+                for (int z = 0; z < 16; z++) {
+                    int worldX = chunkX * 16 + x;
+                    int worldZ = chunkZ * 16 + z;
+                    float height = 0.0f + (sin(worldX * 0.15f) + cos(worldZ * 0.15f)) * 2.0f;
 
-            buffer[index++] = x+1;   buffer[index++] = height; buffer[index++] = z;
-            buffer[index++] = x+1;   buffer[index++] = height; buffer[index++] = z+1;
-            buffer[index++] = x;     buffer[index++] = height; buffer[index++] = z+1;
+                    // Greedy quad (merged)
+                    buffer[index++] = worldX;     buffer[index++] = height; buffer[index++] = worldZ;
+                    buffer[index++] = worldX+1;   buffer[index++] = height; buffer[index++] = worldZ;
+                    buffer[index++] = worldX;     buffer[index++] = height; buffer[index++] = worldZ+1;
+
+                    buffer[index++] = worldX+1;   buffer[index++] = height; buffer[index++] = worldZ;
+                    buffer[index++] = worldX+1;   buffer[index++] = height; buffer[index++] = worldZ+1;
+                    buffer[index++] = worldX;     buffer[index++] = height; buffer[index++] = worldZ+1;
+                }
+            }
         }
     }
 }
